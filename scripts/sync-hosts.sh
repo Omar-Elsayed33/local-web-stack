@@ -19,6 +19,26 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 WWW_DIR="$ROOT_DIR/www"
 
+# --- Auto-elevate so the user never has to open an admin shell manually -------
+OS_NAME="$(uname -s 2>/dev/null || echo unknown)"
+case "$OS_NAME" in
+    MINGW*|MSYS*|CYGWIN*)
+        # On Windows, hand off to the self-elevating PowerShell version, which
+        # triggers a UAC prompt automatically and then writes the hosts file.
+        PS1_WIN="$(cygpath -w "$SCRIPT_DIR/sync-hosts.ps1" 2>/dev/null || echo "$SCRIPT_DIR/sync-hosts.ps1")"
+        echo "Windows detected — launching self-elevating sync (accept the UAC prompt)..."
+        powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$PS1_WIN"
+        exit $?
+        ;;
+    *)
+        # On Linux/macOS, re-run with sudo if the hosts file isn't writable.
+        if [ ! -w /etc/hosts ] && [ "$(id -u)" -ne 0 ]; then
+            echo "Root required to write /etc/hosts — re-running with sudo..."
+            exec sudo -- "$0" "$@"
+        fi
+        ;;
+esac
+
 # --- Load environment values (.env, falling back to .env.example) ------------
 ENV_FILE="$ROOT_DIR/.env"
 if [ ! -f "$ENV_FILE" ]; then

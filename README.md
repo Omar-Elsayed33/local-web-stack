@@ -91,21 +91,26 @@ Runs `sync-hosts.sh`, then `docker compose restart`, then prints every project U
 
 ### Running on Windows
 
-Open **Git Bash as Administrator** (admin is required to edit the hosts file), then:
+The scripts **self-elevate** — you do *not* need to open an Administrator shell
+manually. From a normal Git Bash:
 
 ```bash
 ./scripts/sync-hosts.sh
 ./scripts/restart.sh
 ```
 
-or:
+On Windows, `sync-hosts.sh` hands off to `scripts/sync-hosts.ps1`, which triggers
+a **UAC prompt** (click *Yes*) and then writes the hosts file. You can also run
+the PowerShell version directly — double-click it or:
 
-```bash
-bash scripts/sync-hosts.sh
-bash scripts/restart.sh
+```powershell
+./scripts/sync-hosts.ps1
 ```
 
-The script detects Git Bash and uses `/c/Windows/System32/drivers/etc/hosts`. On Linux/macOS it uses `/etc/hosts` (run with `sudo`). There is also a Windows-only PowerShell helper, `scripts/add-host.ps1` (run from an elevated PowerShell).
+Editing the hosts file requires admin rights, so accepting the UAC prompt is what
+grants permission. On Linux/macOS, `sync-hosts.sh` uses `/etc/hosts` and
+re-runs itself with `sudo` automatically when needed. (`scripts/add-host.ps1`
+remains as a simple fixed-list PowerShell helper.)
 
 ## 8. Manual hosts entries (alternative)
 
@@ -150,6 +155,40 @@ user=app
 password=app
 ```
 
+### Using the credentials in any PHP project
+
+Every value lives in `.env` and is injected into the PHP container, so any
+project under `www/` can read it from the environment — **no hardcoded
+credentials**. These variables are available via `getenv()`:
+
+| Variable              | Value (default) | Notes                                   |
+|-----------------------|-----------------|-----------------------------------------|
+| `MYSQL_HOST`          | `mysql`         | service name on the internal network    |
+| `MYSQL_PORT`          | `3306`          | internal port (host clients use `3307`) |
+| `MYSQL_DATABASE`      | `app`           |                                         |
+| `MYSQL_USER`          | `app`           | application user                        |
+| `MYSQL_PASSWORD`      | `app`           | application password                    |
+| `MYSQL_ROOT_PASSWORD` | `root`          | root password (admin tasks)             |
+
+```php
+<?php
+$pdo = new PDO(
+    sprintf(
+        'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+        getenv('MYSQL_HOST'),
+        getenv('MYSQL_PORT'),
+        getenv('MYSQL_DATABASE')
+    ),
+    getenv('MYSQL_USER'),
+    getenv('MYSQL_PASSWORD'),
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+);
+```
+
+To change credentials, edit `.env` and run `docker compose up -d` (recreates
+the containers with the new values). **After editing `.env`, restart** — the
+variables are read at container start, not per request.
+
 ## 11. MySQL connection (from the host machine)
 
 Uncomment the MySQL `ports` mapping in `docker-compose.yml` first (see section 15), then connect from a desktop client:
@@ -169,7 +208,15 @@ password=root
 http://pma.local
 ```
 
-Log in with the MySQL credentials (`app` / `app`, or `root` / `root`).
+Log in with either account (the server is already set to `mysql` via `PMA_HOST`):
+
+| Access level | Username | Password | From `.env`            |
+|--------------|----------|----------|------------------------|
+| Full / admin | `root`   | `root`   | `MYSQL_ROOT_PASSWORD`  |
+| Application  | `app`    | `app`    | `MYSQL_USER` / `MYSQL_PASSWORD` |
+
+Use **`root` / `root`** to manage all databases and users; use **`app` / `app`**
+for day-to-day work scoped to the `app` database.
 
 ## 13. Mailpit
 
@@ -261,6 +308,7 @@ local-web-stack/
 ├─ scripts/
 │  ├─ add-host.ps1
 │  ├─ sync-hosts.sh
+│  ├─ sync-hosts.ps1
 │  └─ restart.sh
 └─ www/
    └─ demo/

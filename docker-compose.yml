@@ -30,9 +30,14 @@ services:
     volumes:
       - ./www:/var/www
     environment:
+      # Database connection — available to every PHP project via getenv().
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: "3306"            # internal Docker port (host clients use ${MYSQL_PORT})
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      # Mail (Mailpit) — SMTP is always mailpit:1025 on the internal network.
       MAILPIT_DOMAIN: ${MAILPIT_DOMAIN}
     networks:
       - internal

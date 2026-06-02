@@ -7,6 +7,10 @@
  */
 
 $host       = $_SERVER['HTTP_HOST'] ?? 'unknown';
+// All database values come from the environment (set in docker-compose.yml
+// from .env), so any project can read them the same way.
+$dbHost     = getenv('MYSQL_HOST') ?: 'mysql';
+$dbPort     = getenv('MYSQL_PORT') ?: '3306';
 $dbName     = getenv('MYSQL_DATABASE') ?: 'app';
 $dbUser     = getenv('MYSQL_USER') ?: 'app';
 $dbPass     = getenv('MYSQL_PASSWORD') ?: 'app';
@@ -16,7 +20,7 @@ $mailUiHost = getenv('MAILPIT_DOMAIN') ?: 'mail.local';
 $dbStatus = 'not tested';
 try {
     $pdo = new PDO(
-        "mysql:host=mysql;port=3306;dbname={$dbName};charset=utf8mb4",
+        "mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset=utf8mb4",
         $dbUser,
         $dbPass,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 3]
