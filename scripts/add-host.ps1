@@ -35,6 +35,13 @@ if (-not $isAdmin) {
 # --- Add missing entries -----------------------------------------------------
 $existing = Get-Content -Path $HostsPath -ErrorAction SilentlyContinue
 
+# Guard against a hosts file that doesn't end with a newline, otherwise the
+# first appended entry would be glued onto the last existing line.
+$rawBytes = [System.IO.File]::ReadAllBytes($HostsPath)
+if ($rawBytes.Length -gt 0 -and $rawBytes[-1] -ne 10) {
+    Add-Content -Path $HostsPath -Value ""
+}
+
 foreach ($domain in $Domains) {
     # Match the domain as a whole word anywhere on a non-comment line.
     $alreadyPresent = $existing | Where-Object {

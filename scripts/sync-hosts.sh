@@ -95,6 +95,12 @@ add_entry() {
     fi
 }
 
+# Ensure the hosts file ends with a newline, otherwise an append would be
+# glued onto the last existing entry (some editors leave no trailing newline).
+if [ -s "$HOSTS" ] && [ -n "$(tail -c1 "$HOSTS" 2>/dev/null)" ]; then
+    printf '\n' >> "$HOSTS" 2>/dev/null || true
+fi
+
 echo "Syncing hosts entries:"
 for domain in "${DOMAINS[@]}"; do
     [ -n "$domain" ] && add_entry "$domain"
