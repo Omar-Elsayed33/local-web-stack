@@ -14,9 +14,9 @@
 
 # Add or remove domains here as your projects grow.
 $Domains = @(
-    "demo.test",
-    "pma.test",
-    "mail.test"
+    "demo.local",
+    "pma.local",
+    "mail.local"
 )
 
 $HostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"

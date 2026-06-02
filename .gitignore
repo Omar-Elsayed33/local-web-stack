@@ -9,3 +9,10 @@ tmp/
 *.log
 .DS_Store
 Thumbs.db
+
+# Local user projects under www/ must never be committed.
+# Only the demo project is kept as an example.
+www/*
+!www/demo/
+!www/demo/public/
+!www/demo/public/index.php

@@ -43,7 +43,7 @@ RUN printf '%s\n' \
         'tls            off' \
         'host           mailpit' \
         'port           1025' \
-        'from           noreply@local.test' \
+        'from           noreply@local.local' \
         'logfile        /var/log/msmtp.log' \
     > /etc/msmtprc \
     && touch /var/log/msmtp.log \

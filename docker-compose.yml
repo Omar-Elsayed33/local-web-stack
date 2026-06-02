@@ -12,7 +12,7 @@ services:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
     environment:
       # Compatible with common nginx-proxy (jwilder / nginxproxy)
-      VIRTUAL_HOST: "*.test"
+      VIRTUAL_HOST: "*.local"
       VIRTUAL_PORT: "80"
     networks:
       - internal

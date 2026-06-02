@@ -1,0 +1,5 @@
+# Keep shell scripts LF so they run on Linux/macOS and in Git Bash.
+*.sh text eol=lf
+
+# Windows-only helper stays CRLF.
+*.ps1 text eol=crlf
