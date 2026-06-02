@@ -1,0 +1,98 @@
+name: ${PROJECT_NAME}
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: ${NGINX_CONTAINER_NAME}
+    restart: unless-stopped
+    depends_on:
+      - php
+    volumes:
+      - ./www:/var/www
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    environment:
+      # Compatible with common nginx-proxy (jwilder / nginxproxy)
+      VIRTUAL_HOST: "*.test"
+      VIRTUAL_PORT: "80"
+    networks:
+      - internal
+      - proxy
+    # Optional direct port for local testing without the proxy.
+    # ports:
+    #   - "${NGINX_PORT}:80"
+
+  php:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    container_name: ${PHP_CONTAINER_NAME}
+    restart: unless-stopped
+    volumes:
+      - ./www:/var/www
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MAILPIT_DOMAIN: ${MAILPIT_DOMAIN}
+    networks:
+      - internal
+
+  mysql:
+    image: mysql:8
+    container_name: ${MYSQL_CONTAINER_NAME}
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - internal
+    # Optional direct port for connecting from the host machine.
+    # ports:
+    #   - "${MYSQL_PORT}:3306"
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: ${PHPMYADMIN_CONTAINER_NAME}
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: "3306"
+      VIRTUAL_HOST: ${PHPMYADMIN_DOMAIN}
+      VIRTUAL_PORT: "80"
+    networks:
+      - internal
+      - proxy
+    # Optional direct port for local testing without the proxy.
+    # ports:
+    #   - "${PHPMYADMIN_PORT}:80"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ${MAILPIT_CONTAINER_NAME}
+    restart: unless-stopped
+    environment:
+      VIRTUAL_HOST: ${MAILPIT_DOMAIN}
+      VIRTUAL_PORT: "8025"
+    networks:
+      - internal
+      - proxy
+    # Optional direct ports for local testing without the proxy.
+    # ports:
+    #   - "${MAILPIT_WEB_PORT}:8025"
+    #   - "${MAILPIT_SMTP_PORT}:1025"
+
+networks:
+  internal:
+    driver: bridge
+  proxy:
+    external: true
+    name: ${EXTERNAL_PROXY_NETWORK}
+
+volumes:
+  mysql_data:
